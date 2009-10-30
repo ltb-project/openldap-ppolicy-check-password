@@ -3,7 +3,8 @@ check_password.c - OpenLDAP pwdChecker library
 
 2007-06-06 Michael Steinmann <msl@calivia.com>
 2008-01-30 Pierre-Yves Bonnetain <py.bonnetain@ba-cst.com>
-2009-02-05 Clement Oudot <clem.oudot@gmail.com> - LINAGORA Group
+2009        Clement Oudot <clem.oudot@gmail.com> - LTB-project
+2009        Jerome HUET - LTB-project
 
 check_password.c is an OpenLDAP pwdPolicyChecker module used to check the
 strength and quality of user-provided passwords.
@@ -18,12 +19,13 @@ requirements are rejected.
 
 Password checks
 ---------------
- - passwords shorter than 6 characters are rejected (because cracklib WILL
-   reject them).
+ - passwords shorter than 6 characters are rejected if cracklib is used (because
+   cracklib WILL reject them).
 
  - syntactic checks controls how many different character classes are used
    (lower, upper, digit and punctuation characters). The minimum number of
-   classes is defined in a configuration file, not hardcoded anymore.
+   classes is defined in a configuration file. You can set the minimum for each
+   class.
 
  - passwords are checked against cracklib if cracklib is enabled at compile
    time. It can be disabled in configuration file.
@@ -61,7 +63,7 @@ Note: pwdPolicyChecker modules are loaded on *every* password change operation.
 
 Configuration
 -------------
-The configuration file (/etc/openldap/check_passwd.conf by default) contains
+The configuration file (/etc/openldap/check_password.conf by default) contains
 parameters for the module. If the file is not found, parameters are given their
 default value.
 
@@ -74,12 +76,20 @@ change in the future).
 
 Current parameters :
 
-minPoints : integer. Default value : 3. Minimum number of quality points a new password must have
-to be accepted. One quality point is awarded for each character class used in 
-the password.
+-  useCracklib: integer. Default value: 1. Set it to 0 to disable cracklib verification.
+   It has no effect if cracklib is not included at compile time.
 
-useCracklib : integer. Default value : 1. Set it to 0 to disable cracklib verification. It has no
-effect if cracklib is not included at compile time.
+-  minPoints: integer. Default value: 3. Minimum number of quality points a new
+   password must have to be accepted. One quality point is awarded for each character
+   class used in the password.
+
+- minUpper: integer. Defaut value: 0. Minimum upper characters expected.
+
+- minLower: integer. Defaut value: 0. Minimum lower characters expected.
+
+- minDigit: integer. Defaut value: 0. Minimum digit characters expected.
+
+- minPunct: integer. Defaut value: 0. Minimum punctuation characters expected.
 
 Logs
 ----
@@ -112,6 +122,10 @@ TODO
 
 HISTORY
 -------
+* 2009-10-30 Clement OUDOT - LTB-project
+  Version 1.1
+   - Apply patch from Jerome HUET for minUpper/minLower/minDigit/minPunct
+
 * 2009-02-05 Clement Oudot <clem.oudot@gmail.com> - LINAGORA Group
   Version 1.0.3
   - Add useCracklib parameter in config file (with help of Pascal Pejac)

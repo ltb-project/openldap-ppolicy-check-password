@@ -69,6 +69,14 @@ static int set_cracklib (char *value)
 
 }
 
+static int set_digit (char *value)
+{
+#if defined(DEBUG)
+	syslog(LOG_NOTICE, "check_password: Setting parameter to [%s]", value);
+#endif
+	if (!isdigit(*value) || (int) (value[0] - '0') > 9) return 0;
+	return (int) (value[0] - '0');
+}
 
 static validator valid_word (char *word)
 {
@@ -77,6 +85,10 @@ static validator valid_word (char *word)
 		validator dealer;
 	} list[] = { { "minPoints", set_quality },
 		{ "useCracklib", set_cracklib },
+		{ "minUpper", set_digit },
+		{ "minLower", set_digit },
+		{ "minDigit", set_digit },
+		{ "minPunct", set_digit },
 		{ NULL, NULL } };
 	int index = 0;
 
@@ -180,6 +192,10 @@ check_password (char *pPasswd, char **ppErrStr, Entry *pEntry)
 	int nUpper = 0;
 	int nDigit = 0;
 	int nPunct = 0;
+	int minLower = 0;
+	int minUpper = 0;
+	int minDigit = 0;
+	int minPunct = 0;
 	int nQuality = 0;
 	int i;
 
@@ -204,6 +220,10 @@ check_password (char *pPasswd, char **ppErrStr, Entry *pEntry)
 	minQuality = read_config_file("minPoints");
 
 	useCracklib = read_config_file("useCracklib");
+	minUpper = read_config_file("minUpper");
+	minLower = read_config_file("minLower");
+	minDigit = read_config_file("minDigit");
+	minPunct = read_config_file("minPunct");
 
 	/** The password must have at least minQuality strength points with one
 	 * point for the first occurrance of a lower, upper, digit and
@@ -215,7 +235,8 @@ check_password (char *pPasswd, char **ppErrStr, Entry *pEntry)
 		if ( nQuality >= minQuality ) break;
 
 		if ( islower (pPasswd[i]) ) {
-			if ( !nLower ) {
+			minLower--;
+			if ( !nLower && (minLower < 1)) {
 				nLower = 1; nQuality++;
 #if defined(DEBUG)
 				syslog(LOG_NOTICE, "check_password: Found lower character - quality raise %d", nQuality);
@@ -225,7 +246,8 @@ check_password (char *pPasswd, char **ppErrStr, Entry *pEntry)
 		}
 
 		if ( isupper (pPasswd[i]) ) {
-			if ( !nUpper ) {
+			minUpper--;
+			if ( !nUpper && (minUpper < 1)) {
 				nUpper = 1; nQuality++;
 #if defined(DEBUG)
 				syslog(LOG_NOTICE, "check_password: Found upper character - quality raise %d", nQuality);
@@ -235,7 +257,8 @@ check_password (char *pPasswd, char **ppErrStr, Entry *pEntry)
 		}
 
 		if ( isdigit (pPasswd[i]) ) {
-			if ( !nDigit ) {
+			minDigit--;
+			if ( !nDigit && (minDigit < 1)) {
 				nDigit = 1; nQuality++;
 #if defined(DEBUG)
 				syslog(LOG_NOTICE, "check_password: Found digit character - quality raise %d", nQuality);
@@ -245,7 +268,8 @@ check_password (char *pPasswd, char **ppErrStr, Entry *pEntry)
 		}
 
 		if ( ispunct (pPasswd[i]) ) {
-			if ( !nPunct ) {
+			minPunct--;
+			if ( !nPunct && (minPunct < 1)) {
 				nPunct = 1; nQuality++;
 #if defined(DEBUG)
 				syslog(LOG_NOTICE, "check_password: Found punctuation character - quality raise %d", nQuality);
