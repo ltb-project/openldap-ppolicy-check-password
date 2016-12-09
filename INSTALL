@@ -26,6 +26,6 @@ to a password policy entry.
 
 The module depends on a working cracklib installation including wordlist files.
 If the wordlist files are not readable, the cracklib check will be skipped
-silently. 
+silently.
 
 But you can use this module without cracklib, just checks for syntatic checks.

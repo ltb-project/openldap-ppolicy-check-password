@@ -5,6 +5,7 @@ check_password.c - OpenLDAP pwdChecker library
 2008-01-30 Pierre-Yves Bonnetain <py.bonnetain@ba-cst.com>
 2009        Clement Oudot <clem.oudot@gmail.com> - LTB-project
 2009        Jerome HUET - LTB-project
+2011        Trevor Vaughan <tvaughan@onyxpoint.com> - Onyx Point, Inc.
 
 check_password.c is an OpenLDAP pwdPolicyChecker module used to check the
 strength and quality of user-provided passwords.
@@ -15,7 +16,6 @@ see slapo-ppolicy(5) section pwdCheckModule.
 check_password.c will run a number of checks on the passwords to ensure minimum
 strength and quality requirements are met. Passwords that do not meet these
 requirements are rejected.
-
 
 Password checks
 ---------------
@@ -30,16 +30,21 @@ Password checks
  - passwords are checked against cracklib if cracklib is enabled at compile
    time. It can be disabled in configuration file.
 
+ - password checking can optionally be set to ensure that no more than a given
+   number of characters from a character set can be used in a row.
+
 INSTALLATION
 ------------
 Use the provided Makefile to build the module.
 
 Compilation constants :
 
-CONFIG_FILE : Path to the configuration file. 
+CONFIG_FILE : Path to the configuration file.
               Defaults to /etc/openldap/check_password.conf
 
 DEBUG : If defined, check_password will syslog() its actions.
+
+LDEBUG : If defined, check_password will print its actions to the console.
 
 Build dependencies
 cracklib header files (link with -lcrack). The Makefile does not look for
@@ -50,9 +55,33 @@ path to match with the OpenLDAP module path in the Makefile.
 
 The module may be defined with slapd.conf parameter "modulepath".
 
+On Red Hat systems, you will need to download the openldap source RPM that you want to build against and perform the following steps:
+
+ - rpm -i <openldap source RPM>
+ - rpmbuild -bc <rpm_build_dir>/SPECS/openldap.spec
+ - cd <openldap-password-module_dir>
+ - mkdir openldap-<version>
+ - cd openldap-<version>
+ - src_dir="<rpm_build_dir>/BUILD/openldap-<version>/openldap-<version>/"
+ - cp -r $src_dir/build-servers $src_dir/include \
+         $src_dir/libraries $src_dir/servers .
+
+Then, the Makefile should work properly.
+
+
+TESTING
+-------
+An application is provided to build tests for check_password.c. The Makefile
+will produce 'cpass' which will run the tests defined in check_password_test.c.
+It is highly suggested that you use this if you are going to modify
+check_password.c.
+
+You'll need to run cpass with: LD_LIBRARY_PATH=. ./cpass
+
+
 USAGE
 -----
-To use this module you need to add objectClass pwdPolicyChecker with an 
+To use this module you need to add objectClass pwdPolicyChecker with an
 attribute 'pwdCheckModule: check_password.so' to a password policy entry.
 
 The module depends on a working cracklib installation including wordlist files.
@@ -76,20 +105,25 @@ change in the future).
 
 Current parameters :
 
--  useCracklib: integer. Default value: 1. Set it to 0 to disable cracklib verification.
+-  use_cracklib: integer. Default value: 1. Set it to 0 to disable cracklib verification.
    It has no effect if cracklib is not included at compile time.
 
--  minPoints: integer. Default value: 3. Minimum number of quality points a new
+-  min_points: integer. Default value: 3. Minimum number of quality points a new
    password must have to be accepted. One quality point is awarded for each character
    class used in the password.
 
-- minUpper: integer. Defaut value: 0. Minimum upper characters expected.
+- min_upper: integer. Defaut value: 0. Minimum upper characters expected.
 
-- minLower: integer. Defaut value: 0. Minimum lower characters expected.
+- min_lower: integer. Defaut value: 0. Minimum lower characters expected.
 
-- minDigit: integer. Defaut value: 0. Minimum digit characters expected.
+- min_digit: integer. Defaut value: 0. Minimum digit characters expected.
 
-- minPunct: integer. Defaut value: 0. Minimum punctuation characters expected.
+- min_punct: integer. Defaut value: 0. Minimum punctuation characters expected.
+
+- max_consecutive_per_class: integer. Default value: 5. Maximum number of
+  characters that can appear consecutively from a given character class. 0
+  disables.
+
 
 Logs
 ----
@@ -118,10 +152,18 @@ Use at your own risk.
 TODO
 ----
 * use proper malloc function, see ITS#4998
+* get rid of GOTO's
 
 
 HISTORY
 -------
+* 2011-01-28 - Trevor Vaughan <tvaughan@onyxpoint.com> - Onyx Point, Inc.
+  Version 1.2
+   - Ensure the the configuration file is only read once per run.
+   - Add max_consecutive_per_class.
+   - Add LDEBUG flag for local debugging.
+   - Add test code and update Makefile
+
 * 2009-10-30 Clement OUDOT - LTB-project
   Version 1.1
    - Apply patch from Jerome HUET for minUpper/minLower/minDigit/minPunct
